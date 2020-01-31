@@ -157,8 +157,7 @@ end
 
 local function GetRaidId(_column)
   local column = strlower(strtrim(_column))
-  DEFAULT_CHAT_FRAME:AddMessage(_column, 0.15, 0.15, 0.9);
-  DEFAULT_CHAT_FRAME:AddMessage(column, 0.15, 0.15, 0.9);
+
   local raidId = GCID.RAID.DEFAULT
   if GCID.RAID.MOLTEN_CORE.NAME_MAP[column] then
     raidId = GCID.RAID.MOLTEN_CORE.ID
@@ -167,7 +166,7 @@ local function GetRaidId(_column)
   elseif GCID.RAID.BLACKWING_LAIR.NAME_MAP[column] then
     raidId = GCID.RAID.BLACKWING_LAIR.ID
   end
-  DEFAULT_CHAT_FRAME:AddMessage(raidId, 0.15, 0.15, 0.9);
+
   return raidId
 end
 
@@ -307,11 +306,10 @@ function InternalSaveEvent(rChangedFieldsExternal) -- Master addon edited functi
 	local	vChangedFields = {};
 	if rChangedFieldsExternal then
     vChangedFields = rChangedFieldsExternal
-    DEFAULT_CHAT_FRAME:AddMessage(ArrayToString(rChangedFieldsExternal), 0.8, 0.8, 0.2);
   else
     CalendarEventEditor_UpdateEventFromControls(gCalendarEventEditor_Event, vChangedFields);	
   end
-  DEFAULT_CHAT_FRAME:AddMessage(ArrayToString(vChangedFields), 0.8, 0.8, 0.2);
+
 	if not gCalendarEventEditor_IsNewEvent then
 		CalendarEventEditor_SaveRSVP(gCalendarEventEditor_Event);
 	end
@@ -398,15 +396,7 @@ function InternalAddPlayer(playerInfo) -- Master addon edited function
 	if not vGuild then
 		vGuild = gGroupCalendar_PlayerGuild;
 	end
-	DEFAULT_CHAT_FRAME:AddMessage("Status code: "..vStatusCode, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Class code:  "..vClassCode, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Race code:   "..vRaceCode, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Level:       "..vLevel, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Comment:     "..vComment, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Guild:       "..vGuild, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Guild Rank:  "..vGuildRank, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Role:        "..vRole, 0.3, 0.8, 0.8);
-  DEFAULT_CHAT_FRAME:AddMessage("Role Code:   "..vRoleCode, 0.3, 0.8, 0.8);
+
 	if not vGuildRank then
 		vGuild = nil;
 	end
@@ -534,24 +524,31 @@ end
 -------------------
 function CreateAttendanceListFromParsedData(playerList, eventData)
   GuildCachePlayersAllowedToRaid()
-  local playerInfo = {
-    name = "",
-    statusCode = "Y", -- Always accepted
-    classCode = nil,
-    raceCode = "N", -- Don't care, set all to Night Elf
-    level = nil,
-    comment = "Attendee imported using GroupCalendar ImportData",
-    guild = nil,
-    guildRank = nil,
-    role = nil,
-    roleCode = nil
-  }
-  
+
   for playerId, playerData in pairs(eventData[PLAYERS]) do
+
+    local playerInfo = {
+      name = "",
+      statusCode = "Y", -- Always accepted
+      classCode = nil,
+      raceCode = "N", -- Don't care, set all to Night Elf
+      level = nil,
+      comment = "Attendee imported using GroupCalendar ImportData",
+      guild = nil,
+      guildRank = nil,
+      role = nil,
+      roleCode = nil
+    }
+    
     local allowedToRaid, _class, level, rankIndex = GetCachedPlayerInfo(playerData)
-    local class = strlower(_class)
+    local class = nil
+    
+    if allowedToRaid then
+      class = strlower(_class)
+    end
+    
     if not allowedToRaid then
-      DEFAULT_CHAT_FRAME:AddMessage("Raid <"..event[GCID.EVENT_INFO_COLUMN.NAME].."> unknown player: ["..playerData.NAME.."]", 0.8, 0.8, 0.2);
+      DEFAULT_CHAT_FRAME:AddMessage("Raid <"..eventData[GCID.EVENT_INFO_COLUMN.NAME].."> unknown player: ["..playerData.NAME.."]", 0.8, 0.8, 0.2);
     elseif class ~= playerData.CLASS then
       DEFAULT_CHAT_FRAME:AddMessage("Player ["..playerData.NAME.."] has class mixed up: ["..class.." or "..playerData.CLASS.."]?", 0.8, 0.8, 0.2);
     else
@@ -587,7 +584,6 @@ function CreateAndFillEvents()
     InternalSaveEvent(eventInfo)
     -- Attendees
     CreateAttendanceListFromParsedData(playerList, eventData)
-    DEFAULT_CHAT_FRAME:AddMessage(ArrayToString(playerList), 0.8, 0.8, 0.2);
     for _, playerInfo in pairs(playerList) do
       InternalAddPlayer(playerInfo)
     end
