@@ -1,0 +1,8 @@
+## Interface: 11303
+## Title: Group Calendar |cff00ff00Import Data|r
+## Notes: Import XLS data to group calendar
+## RequiredDeps: GroupCalendar
+
+GroupCalendar_ImportData.xml
+GroupCalendar_ImportData.lua
+GroupCalendar_ImportDataEnums.lua
