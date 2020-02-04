@@ -1,48 +1,39 @@
-local InternalState = { parsed = false, imported = false }
+local InternalState = { imported = false }
 local ImportedData = {input = nil, rows = nil}
 local ColumnToEventDataMapping = {}
 local ColumnToClassMapping = {}
 local ColumnToSpecMapping = {}
 local SpecToColumnMapping = { DPS = {}, HEALER = {}, TANK = {} }
 
--- Event = { NAME = "", DATE = "", TIME = "", PLAYERS = {} }
--- PlayerData = { {NAME = "", CLASS = "", ROLE = ""}}
 local Event = {} 
 local Events = {}
 
 local GuildRaiderCache = { CREATED = false, DATA = {}}
 
-local MIN_RAID_LEVEL = 1;
+local MIN_RAID_LEVEL = 58;
 
--- DEFAULT_CHAT_FRAME:AddMessage(, 0.8, 0.8, 0.2);
-
-local LAST_MEMORY_IN_USE = 0
-local DEBUG = false;
-
-MIN_RAID_LEVEL = 0;
-
--- Functions
-
-local function DiffMemoryUsage()
-  if not DEBUG then return end
-  local currentMemoryInUse = gcinfo()
-  local diff = currentMemoryInUse - LAST_MEMORY_IN_USE
-  DEFAULT_CHAT_FRAME:AddMessage("Memory diff: "..diff.." KB", 0.15, 0.15, 0.80);
-  LAST_MEMORY_IN_USE = currentMemoryInUse
-end
-
+------------------------ SECTION -------------------------
+-- Addon General Functions and UI functions
+----------------------------------------------------------
+----------------------------------------------------------
+-- OnLoad
+-- Set slash command /gcid
+-- Set toggle UI to it as the handler
+-- PUBLIC
+----------------------------------------------------------
 function GroupCalendarImportData_OnLoad(frame)	  	  
-  DiffMemoryUsage()
-  
 	SLASH_GCIMPORTDATA1 = "/gcid";
-	--SLASH_GCIMPORTDATADEBUG1 = "/gcidd";
 	tinsert(UISpecialFrames, "GroupCalendarImportDataFrame");
 	
 	UIPanelWindows["GroupCalendarImportDataFrame"] = {area = "left", pushable = 5, whileDead = 1};
 	SlashCmdList.GCIMPORTDATA = GroupCalendarImportData_ToggleFrame
-  --SlashCmdList.GCIMPORTDATADEBUG = CreateEventAtDate
 end
 
+----------------------------------------------------------
+-- ToggleFrame
+-- Toggle Import Frame visiblity
+-- PUBLIC
+----------------------------------------------------------
 function GroupCalendarImportData_ToggleFrame()
   if GroupCalendarImportDataFrame:IsVisible() then
     HideUIPanel(GroupCalendarImportDataFrame);
@@ -51,9 +42,15 @@ function GroupCalendarImportData_ToggleFrame()
   end
 end
 
-
-
-function ArrayToString(arr, indentLevel)
+------------------------ SECTION -------------------------
+-- Helpers
+----------------------------------------------------------
+----------------------------------------------------------
+-- ArrayToString
+-- Stringify Array. Includes nil values as "NIL" string.
+-- PRIVATE
+----------------------------------------------------------
+local function ArrayToString(arr, indentLevel)
   -- https://stackoverflow.com/questions/7274380/how-do-i-display-array-elements-in-lua
   local str = ""
   local indentStr = ""
@@ -81,6 +78,60 @@ function ArrayToString(arr, indentLevel)
   return str
 end
 
+----------------------------------------------------------
+-- GetHMFromTimeString
+-- Return Hours and Minutes from time string.
+-- Minutes is rounded to 0/5.
+-- For now supports only 24h date format
+-- PRIVATE
+----------------------------------------------------------
+local function GetHMFromTimeRounded(string)
+  local hour, minute = strsplit(":", string)
+  local nHour = tonumber(hour); nMinute = tonumber(minute)
+  
+  if nHour then
+    if nHour > 23 then
+      nHour = 23
+    end
+  else
+    nHour = 0
+  end
+  
+  if nMinute then
+    -- Minute = 10*Tens + Ones
+    local minuteTens = tonumber(strsub(minute, 1, 1))
+    local minuteOnes = tonumber(strsub(minute, 2, 2))
+    
+    -- e.g. 12:5 insted of 12:05
+    if not minuteOnes then
+      minuteOnes = minuteTens
+      minuteTens = 0
+    end
+    
+    if minuteOnes >= 5 then
+      minuteOnes = 5
+    else
+      minuteOnes = 0
+    end
+    
+    nMinute = 10*minuteTens + minuteOnes
+    
+  else
+    nMinute = 0
+  end
+  
+  return nHour, nMinute
+end
+
+------------------------ SECTION -------------------------
+-- Input data handling
+----------------------------------------------------------
+----------------------------------------------------------
+-- ReformatData
+-- Reformat data to csv
+-- Supports tab, space and comma separated formats 
+-- PRIVATE
+----------------------------------------------------------
 local function ReformatData()
   -- Copying to WoW puts 4 spaces instead of tab. Reformat all 4 spaced to ,
   local csv = gsub(ImportedData.input, "    ", ",")
@@ -92,28 +143,56 @@ local function ReformatData()
   ImportedData.rows = { strsplit("\n", csv) }
 end
 
--- Column / row decoding functions
-
+----------------------------------------------------------
+-- IsRaidColumn
+-- Check if column contains raid indicator
+-- PRIVATE
+----------------------------------------------------------
 local function IsRaidColumn(column)
   return (strlower(strtrim(column)) == GCID.EVENT_INFO_COLUMN.RAID)
 end
 
+----------------------------------------------------------
+-- IsNameColumn
+-- Check if column contains event name
+-- PRIVATE
+----------------------------------------------------------
 local function IsNameColumn(column)
   return (strlower(strtrim(column)) == GCID.EVENT_INFO_COLUMN.NAME)
 end
 
+----------------------------------------------------------
+-- IsDateColumn
+-- Check if column contains event date
+-- PRIVATE
+----------------------------------------------------------
 local function IsDateColumn(column)
   return (strlower(strtrim(column)) == GCID.EVENT_INFO_COLUMN.DATE)
 end
 
+----------------------------------------------------------
+-- IsTimeColumn
+-- Check if column contains event time
+-- PRIVATE
+----------------------------------------------------------
 local function IsTimeColumn(column)
   return (strlower(strtrim(column)) == GCID.EVENT_INFO_COLUMN.TIME)
 end
 
+----------------------------------------------------------
+-- IsTitleRow
+-- Check if row this row is the title row
+-- PRIVATE
+----------------------------------------------------------
 local function IsTitleRow(column)
   return IsRaidColumn(column)
 end
 
+----------------------------------------------------------
+-- IsEmptyColumn
+-- Check column is empty
+-- PRIVATE
+----------------------------------------------------------
 local function IsEmptyColumn(column)
   if column == nil then return true end
   if not column then return true end
@@ -121,6 +200,13 @@ local function IsEmptyColumn(column)
   return false
 end
 
+----------------------------------------------------------
+-- MapColumnsFromTitleRow
+-- Map column number from 1 to n to its related specifc type
+-- This allows for unordered columns
+-- Resolves also which class / spec is in which column for further filling
+-- PRIVATE
+----------------------------------------------------------
 local function MapColumnsFromTitleRow(_column, id)
   if IsEmptyColumn(_column) then return end
   -- This function is called after Raid indicator is found. No need to check for it.
@@ -134,7 +220,7 @@ local function MapColumnsFromTitleRow(_column, id)
     -- Expected column format is "Class Spec" where spec can be empty and by default set to DPS
     local class, spec = strsplit(" ", strlower(strtrim(_column)))
     if not spec then
-      spec = "dps"
+      spec = "DPS"
     end
     -- Map Class
     if GCID.VALID_CLASS[class] then
@@ -155,6 +241,11 @@ local function MapColumnsFromTitleRow(_column, id)
   end
 end
 
+----------------------------------------------------------
+-- GetRaidId
+-- Get Raid Id (defined by Group Calendar) from Raid column 
+-- PRIVATE
+----------------------------------------------------------
 local function GetRaidId(_column)
   local column = strlower(strtrim(_column))
 
@@ -170,6 +261,12 @@ local function GetRaidId(_column)
   return raidId
 end
 
+----------------------------------------------------------
+-- FillEventData
+-- Fill information about event and attendees based on the mapping
+-- This function is called on each column of each row
+-- PRIVATE
+----------------------------------------------------------
 local function FillEventData(_column, id)
   if IsEmptyColumn(_column) then return end
   
@@ -189,9 +286,15 @@ local function FillEventData(_column, id)
   end
 end
 
- -- Parsing
-
-local function ParseDataToEvents()
+----------------------------------------------------------
+-- CreateEventsFromData
+-- Parse input data to fill event info, and attendees
+-- Supports multiple events
+-- Requires one empty line between each event
+-- First filled column must be the one with title row indication
+-- PRIVATE
+----------------------------------------------------------
+local function CreateEventsFromData()
   local parsingRaid = false;
   
   for _rowId, row in pairs(ImportedData.rows) do
@@ -243,23 +346,38 @@ local function ParseDataToEvents()
       parsingRaid = true;
       Event = {}
     end
+  end
   
+  -- Handle missing empty row at the end
+  if parsingRaid then
+    parsingRaid = false;
+    table.insert(Events, Event)
   end
 
   return true
 end
 
-local function ParseData()
+----------------------------------------------------------
+-- ParseDataToEvents
+-- Reformat and parse import data
+-- returns true on success, false otherwise
+-- PRIVATE
+----------------------------------------------------------
+local function ParseDataToEvents()
   ReformatData();
-  success = ParseDataToEvents();
-  if success then
-    DEFAULT_CHAT_FRAME:AddMessage("Parse Successful", 0.15, 0.9, 0.15);
-  else
-    DEFAULT_CHAT_FRAME:AddMessage("Parse Failed", 0.9, 0.15, 0.15);
-  end
-  DiffMemoryUsage();
+  success = CreateEventsFromData();
+  return success
 end
 
+------------------------ SECTION -------------------------
+-- Guild / player info handling
+----------------------------------------------------------
+----------------------------------------------------------
+-- GuildCachePlayersAllowedToRaid
+-- Read and cache players allowed to raid
+-- This data is persisted until UI reload
+-- PRIVATE
+----------------------------------------------------------
 local function GuildCachePlayersAllowedToRaid()
   if not GuildRaiderCache.CREATED then
     -- Get Guild data
@@ -278,13 +396,18 @@ local function GuildCachePlayersAllowedToRaid()
         cachedCount = cachedCount + 1
       end
     end
-    DEFAULT_CHAT_FRAME:AddMessage("Found "..cachedCount.." players with min "..MIN_RAID_LEVEL.." lvl", 0.15, 0.15, 0.80);
+    GroupCalendarImportData_Message("Found "..cachedCount.." players with min "..MIN_RAID_LEVEL.." lvl");
     GuildRaiderCache.CREATED = true
   end
-  DiffMemoryUsage();
 end
 
-local function GetCachedPlayerInfo(playerData)
+----------------------------------------------------------
+-- GetPlayerInfo
+-- Get information about player
+-- Returns false, nil, nil, nil when user is not in cache database
+-- PRIVATE
+----------------------------------------------------------
+local function GetPlayerInfo(playerData)
   -- Check cached raiders data
   local info = GuildRaiderCache.DATA[strlower(playerData.NAME)]
   if not info then
@@ -297,11 +420,21 @@ local function GetCachedPlayerInfo(playerData)
   -- TODO: Guild Rank for specific events (BWL?)
 end
 
----------------------------------------------------------
---------------------------------------
--------------------
+------------------------ SECTION -------------------------
+-- Main addon modified functions
+-- Those functions are modified so this addon can work
+-- In an independent matter
+-- Those changes are expected to be incorporated in the 
+-- GroupCalendar addon further on
+----------------------------------------------------------
 
-function InternalSaveEvent(rChangedFieldsExternal) -- Master addon edited function
+----------------------------------------------------------
+-- CalendarEventEditor_SaveEvent
+-- Save Group Calendar Event
+-- Data is taken from parameter instead of UI
+-- PRIVATE
+----------------------------------------------------------
+local function _CalendarEventEditor_SaveEvent(rChangedFieldsExternal)
 	-- Update the event
 	local	vChangedFields = {};
 	if rChangedFieldsExternal then
@@ -356,10 +489,14 @@ function InternalSaveEvent(rChangedFieldsExternal) -- Master addon edited functi
 	end
 end
 
--------------------
--------------------
--------------------
-function InternalAddPlayer(playerInfo) -- Master addon edited function
+
+----------------------------------------------------------
+-- CalendarAddPlayer_Save
+-- Save Attendee to an event
+-- Data is taken from parameter instead of UI
+-- PRIVATE
+----------------------------------------------------------
+local function _CalendarAddPlayer_Save(playerInfo) -- Master addon edited function
 	local vName,	vStatusCode,	vClassCode,	vRaceCode,	vLevel,	vComment,	vGuild,	vGuildRank,	vRole,	vRoleCode
   
   if playerInfo then
@@ -445,35 +582,44 @@ function InternalAddPlayer(playerInfo) -- Master addon edited function
 		CalendarEventEditor_UpdateControlsFromEvent(gCalendarEventEditor_Event, true);	
 	end
 end
--------------------
--------------------
--------------------
-function UpdateEventFromParsedData(rEvent, rChangedFields, eventData)
+
+------------------------ SECTION -------------------------
+-- Data formating for GroupCalendar
+----------------------------------------------------------
+----------------------------------------------------------
+-- PrepareEventDataForGroupCalendar
+-- Prepare event data in group calendar understandable form
+-- returns formated array
+-- PRIVATE
+----------------------------------------------------------
+local function PrepareEventDataForGroupCalendar(groupCalendarEvent, eventData)
+  local changedFields = {}
   
   -- Type
   local eventType = GetRaidId(eventData[GCID.EVENT_INFO_COLUMN.RAID]);
-  rEvent.mType = eventType
-  rChangedFields.mType = {op = "UPD", val = eventType};
+  groupCalendarEvent.mType = eventType
+  changedFields.mType = {op = "UPD", val = eventType};
 	
 	-- Title
-  rEvent.mTitle = Calendar_EscapeString(eventData[GCID.EVENT_INFO_COLUMN.NAME]);
-  rChangedFields.mTitle = "UPD";
+  groupCalendarEvent.mTitle = Calendar_EscapeString(eventData[GCID.EVENT_INFO_COLUMN.NAME]);
+  changedFields.mTitle = "UPD";
   vChanged = true;
 	
 	-- Date and Time
-  local vTime = Calendar_ConvertHMToTime(20, 30)
+  local hour, minute = GetHMFromTimeRounded(eventData[GCID.EVENT_INFO_COLUMN.TIME])
+  local time = Calendar_ConvertHMToTime(hour, minute)
 
-  -- Dont touch date
+  -- Don't touch date
   -- local vDate = gCalendarEventEditor_EventDate
-  -- rEvent.mDate = vDate;
-  -- rChangedFields.mDate = "UPD";
+  -- groupCalendarEvent.mDate = vDate;
+  -- changedFields.mDate = "UPD";
 	
-  rEvent.mTime = vTime;
-  rChangedFields.mTime = "UPD";
+  groupCalendarEvent.mTime = time;
+  changedFields.mTime = "UPD";
 	
 	-- Duration
   -- Don't touch default duration
-  --	if not EventDatabase_EventTypeUsesTime(rEvent.mType) then
+  --	if not EventDatabase_EventTypeUsesTime(groupCalendarEvent.mType) then
   --		vValue = nil;
   --	end
     
@@ -481,50 +627,34 @@ function UpdateEventFromParsedData(rEvent, rChangedFields, eventData)
   --		vValue = nil;
   --	end
   
-  --  rEvent.mDuration = vValue;
-  --	rChangedFields.mDuration = "UPD";
+  --  groupCalendarEvent.mDuration = vValue;
+  --	changedFields.mDuration = "UPD";
 	
 	-- Description
-  rEvent.mDescription = Calendar_EscapeString("Event imported using GroupCalendar ImportData");
-  rChangedFields.mDescription = "UPD";
+  groupCalendarEvent.mDescription = Calendar_EscapeString("Event imported using GroupCalendar ImportData");
+  changedFields.mDescription = "UPD";
 	
 	-- MinLevel
-	
-	if EventDatabase_EventTypeUsesLevelLimits(rEvent.mType) then
-		vValue = MIN_RAID_LEVEL
-	else
-		vValue = nil;
-	end
-	
-  if vValue == 0 then
-    vValue = nil;
-	end
-	
-  rEvent.mMinLevel = vValue;
-  rChangedFields.mMinLevel = "UPD";
+  groupCalendarEvent.mMinLevel = MIN_RAID_LEVEL;
+  changedFields.mMinLevel = "UPD";
 	
   -- MaxLevel
-	
-	if EventDatabase_EventTypeUsesTime(rEvent.mType) then
-		vValue = 60
-	else
-		vValue = nil;
-	end
+  groupCalendarEvent.mMaxLevel = 60
+  changedFields.mMaxLevel = "UPD";
 
-  if vValue == 0 then
-    vValue = nil;
-	end
-	
-  rEvent.mMaxLevel = vValue;
-  rChangedFields.mMaxLevel = "UPD";
-
+  return changedFields
 end
--------------------
--------------------
--------------------
-function CreateAttendanceListFromParsedData(playerList, eventData)
+
+----------------------------------------------------------
+-- CreateAttendanceListForGroupCalendar
+-- Create list of attendees in format acceptable by GroupCalendar
+-- returns formated array
+-- PRIVATE
+----------------------------------------------------------
+local function CreateAttendanceListForGroupCalendar(eventData)
   GuildCachePlayersAllowedToRaid()
 
+  local playerList = {}
   for playerId, playerData in pairs(eventData[PLAYERS]) do
 
     local playerInfo = {
@@ -533,14 +663,14 @@ function CreateAttendanceListFromParsedData(playerList, eventData)
       classCode = nil,
       raceCode = "N", -- Don't care, set all to Night Elf
       level = nil,
-      comment = "Attendee imported using GroupCalendar ImportData",
+      comment = "",
       guild = nil,
       guildRank = nil,
       role = nil,
       roleCode = nil
     }
     
-    local allowedToRaid, _class, level, rankIndex = GetCachedPlayerInfo(playerData)
+    local allowedToRaid, _class, level, rankIndex = GetPlayerInfo(playerData)
     local class = nil
     
     if allowedToRaid then
@@ -548,9 +678,9 @@ function CreateAttendanceListFromParsedData(playerList, eventData)
     end
     
     if not allowedToRaid then
-      DEFAULT_CHAT_FRAME:AddMessage("Raid <"..eventData[GCID.EVENT_INFO_COLUMN.NAME].."> unknown player: ["..playerData.NAME.."]", 0.8, 0.8, 0.2);
+      GroupCalendarImportData_Message("Raid <"..eventData[GCID.EVENT_INFO_COLUMN.NAME].."> unknown player: ["..playerData.NAME.."]");
     elseif class ~= playerData.CLASS then
-      DEFAULT_CHAT_FRAME:AddMessage("Player ["..playerData.NAME.."] has class mixed up: ["..class.." or "..playerData.CLASS.."]?", 0.8, 0.8, 0.2);
+      GroupCalendarImportData_Message("Player ["..playerData.NAME.."] has class mixed up: ["..class.." or "..playerData.CLASS.."]?");
     else
       playerInfo.name = playerData.NAME
       playerInfo.classCode = GCID.CLASS[class]
@@ -562,79 +692,135 @@ function CreateAttendanceListFromParsedData(playerList, eventData)
     end
   end
 
+  return playerList
 end
--------------------
--------------------
--------------------
-function CreateAndFillEvents()
+
+------------------------ SECTION -------------------------
+-- Main functions
+----------------------------------------------------------
+----------------------------------------------------------
+-- CreateAndFillEvents
+-- Handles the creation of events in Group Calendar
+-- Requires parsed data
+-- PRIVATE
+----------------------------------------------------------
+local function CreateAndFillEvents()
   -- Date
   -- TODO handle date properly, maybe multiple formats
   for _, eventData in pairs(Events) do
     local day, month, year = strsplit("-", eventData[GCID.EVENT_INFO_COLUMN.DATE])
     local	vMonthStartDate = Calendar_ConvertMDYToDate(month, 1, year);
-    -- ---
-    local eventInfo = {}
-    local playerList = {}
-    -- ---
+    -- Select date for the event date
     GroupCalendar_SelectDate(vMonthStartDate + day - 1);
-    -- Create event
+    -- Create event. This opens event editing window. Due to WoW API requirements its ok.
     CalendarEditor_NewEvent()
-    UpdateEventFromParsedData(gCalendarEventEditor_Event, eventInfo, eventData)
-    -- Save and upate event
-    InternalSaveEvent(eventInfo)
-    -- Attendees
-    CreateAttendanceListFromParsedData(playerList, eventData)
+    -- Save and update event
+    local eventInfo = PrepareEventDataForGroupCalendar(gCalendarEventEditor_Event, eventData)
+    _CalendarEventEditor_SaveEvent(eventInfo)
+    -- Add Attendees
+    local playerList = CreateAttendanceListForGroupCalendar(eventData)
     for _, playerInfo in pairs(playerList) do
-      InternalAddPlayer(playerInfo)
+      _CalendarAddPlayer_Save(playerInfo)
     end
-    -- Hide
-    HideUIPanel(CalendarEventEditorFrame); -- hide the edit window, as everything is done atuomatically
+    -- Hide the event editiing window. This should happen fast enough and behind the import UI
+    -- So user should not notice it. But if he does - known issue :)
+    HideUIPanel(CalendarEventEditorFrame);
   end
 end
 
--------------------
---------------------------------------
----------------------------------------------------------
-
--- Other Functions
-
-function GroupCalendarImportData_Error(message)
-  if message then
-    DEFAULT_CHAT_FRAME:AddMessage("GroupCalendar ImportData Error: "..message, 0.9, 0.15, 0.15);
-  end
-end
-
-function GroupCalendarImportData_ButtonImportOnClick()
-  DiffMemoryUsage();
-  if InternalState.parsed then return end
+----------------------------------------------------------
+-- ImportAndParse
+-- Main executed function
+-- Handles the import of the data and creation of events.
+-- PRIVATE
+----------------------------------------------------------
+local function ImportAndParse()
   -- 1) Get Data
   ImportedData.input = GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:GetText();
-  -- 2) Parse data to get Events array
-  ParseData();
+
+  -- 2) Parse data and get fill events info
+  if ParseDataToEvents() then
+    GroupCalendarImportData_Success("Parse successful");
+  else
+    GroupCalendarImportData_Error("Parse failed");
+    return
+  end
+
   -- 3) Display parsed data (raw format) -- TODO make it good looking
   GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:SetText(ArrayToString(Events));
-  -- 4)
-  CreateAndFillEvents();
-  -- 
-  InternalState.parsed = true
+
+  -- 4) Create GroupCalendar events, fill it with info and add attendees
+  if CreateAndFillEvents() then
+    GroupCalendarImportData_Success("Import complete");
+  else
+    GroupCalendarImportData_Error("Import error");
+    return
+  end
+
 end
 
+------------------------ SECTION -------------------------
+-- Messages
+----------------------------------------------------------
+----------------------------------------------------------
+-- GroupCalendarImportData_Success
+-- Send SUCCESS message
+-- PUBLIC
+----------------------------------------------------------
+function GroupCalendarImportData_Success(message)
+  if message then
+    DEFAULT_CHAT_FRAME:AddMessage(message, 0.15, 0.9, 0.15);
+  end
+end
+
+----------------------------------------------------------
+-- GroupCalendarImportData_Success
+-- Send SUCCESS message
+-- PUBLIC
+----------------------------------------------------------
+function GroupCalendarImportData_Error(message)
+  if message then
+    DEFAULT_CHAT_FRAME:AddMessage(message, 0.9, 0.15, 0.15);
+  end
+end
+
+----------------------------------------------------------
+-- GroupCalendarImportData_Success
+-- Send SUCCESS message
+-- PUBLIC
+----------------------------------------------------------
+function GroupCalendarImportData_Message(message)
+  if message then
+    DEFAULT_CHAT_FRAME:AddMessage(message, 0.9, 0.9, 0.15);
+  end
+end
+
+------------------------ SECTION -------------------------
+-- Event Handlers
+----------------------------------------------------------
+----------------------------------------------------------
+-- GroupCalendarImportData_ButtonImportOnClick
+-- Handle Import button click
+-- PUBLIC
+----------------------------------------------------------
+function GroupCalendarImportData_ButtonImportOnClick()
+  if InternalState.imported then return end
+  ImportAndParse()
+  InternalState.imported = true
+end
+
+----------------------------------------------------------
+-- GroupCalendarImportData_ButtonClearOnClick
+-- Handle Clear button click
+-- PUBLIC
+----------------------------------------------------------
 function GroupCalendarImportData_ButtonClearOnClick()
-  DiffMemoryUsage();
   -- Reset all
-  InternalState.parsed = false
-  Events = {}
-  Event = {}
-  ImportedData.input = nil
-  ImportedData.rows = nil
-  ColumnToEventDataMapping = {}
-  ColumnToClassMapping = {}
-  ColumnToSpecMapping = {}
-  SpecToColumnMapping.DPS = {}
-  SpecToColumnMapping.HEALER = {}
-  SpecToColumnMapping.TANK = {}
-  -- Do NOT clear Raider  cache
+  InternalState.imported = false
+  Events = {}; Event = {} ImportedData.input = nil; ImportedData.rows = nil;
+  ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
+  SpecToColumnMapping.DPS = {}; SpecToColumnMapping.HEALER = {}; SpecToColumnMapping.TANK = {}
+  -- Do NOT clear Raider cache
   GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:SetText("");
   collectgarbage()
-  DiffMemoryUsage();
 end

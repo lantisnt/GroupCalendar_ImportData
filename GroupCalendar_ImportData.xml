@@ -62,4 +62,21 @@
       </OnLoad>
 		</Scripts>
 	</Frame>
+<!--  <Button name="GroupCalendarImportDataFrame_ButtonImportToggle" inherits="UIPanelButtonTemplate" text="Import">
+    <Size>
+      <AbsDimension x="95" y="21"/>
+    </Size>
+    <Anchors>
+      <Anchor point="BOTTOMRIGHT" relativeTo="GroupCalendarFrame" relativePoint="BOTTOMRIGHT">
+        <Offset>
+          <AbsDimension x="-5" y="0"/>
+        </Offset>
+      </Anchor>
+    </Anchors>
+    <Scripts>
+      <OnClick>
+        GroupCalendarImportData_ToggleFrame();
+      </OnClick>
+    </Scripts>
+  </Button> -->
 </UI>
