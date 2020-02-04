@@ -8,6 +8,19 @@
 		<Size>
 			<AbsDimension x="800" y="440"/>
 		</Size>
+    <Layers>
+      <Layer level="OVERLAY">
+				<FontString name="GroupCalendarImportDataTitleText" text="Group Calendar Import Data (Excel - Google Calc - CSV)" inherits="GameFontHighlight">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset>
+								<AbsDimension x="17" y="-9"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
     <Frames>
       <ScrollFrame name="GroupCalendarImportDataFrame_ScrollFrameImportData" resizeable="true" multiLine="true" autofocus="true" inherits="InputScrollFrameTemplate">
         <Size>

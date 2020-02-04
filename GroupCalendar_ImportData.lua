@@ -79,7 +79,7 @@ local function ArrayToString(arr, indentLevel)
 end
 
 ----------------------------------------------------------
--- GetHMFromTimeString
+-- GetHMFromTimeRounded
 -- Return Hours and Minutes from time string.
 -- Minutes is rounded to 0/5.
 -- For now supports only 24h date format
@@ -123,6 +123,57 @@ local function GetHMFromTimeRounded(string)
   return nHour, nMinute
 end
 
+----------------------------------------------------------
+-- GetDMYToday
+-- Return day, month, year for current date
+-- Attention: Uses GroupCalendar current date info
+-- PRIVATE
+----------------------------------------------------------
+local function GetDMYToday()
+  local	m, d, y = Calendar_ConvertDateToMDY(gCalendarActualDate);
+  return d, m, y
+end
+
+----------------------------------------------------------
+-- GetDMYFromDateString
+-- Return day, month, year from date string
+-- Supports only D/M/Y date format
+-- Supports \/-. separators
+-- PRIVATE
+----------------------------------------------------------
+local function GetDMYFromDateString(string)
+  local separator = nil
+  if strfind(string, "/") then
+    separator = "/"
+  elseif strfind(string, "\\") then
+    separator = "\\"
+  elseif strfind(string, "-") then
+    separator = "-"
+  elseif strfind(string, ".") then
+    separator = "."
+  end
+  
+  -- Return current date from in case of error
+  if not separator then
+    return GetDMYToday();
+  end
+  
+  local day, month, year = strsplit(separator, string)
+  
+  if not day or (day == 0) then
+    day = 1
+  end
+  
+  if not month or (month == 0) then
+    month = 1
+  end
+  
+  if not year or (year == 0) then
+    year = 2020
+  end
+  
+  return day, month, year
+end
 ------------------------ SECTION -------------------------
 -- Input data handling
 ----------------------------------------------------------
@@ -220,7 +271,7 @@ local function MapColumnsFromTitleRow(_column, id)
     -- Expected column format is "Class Spec" where spec can be empty and by default set to DPS
     local class, spec = strsplit(" ", strlower(strtrim(_column)))
     if not spec then
-      spec = "DPS"
+      spec = "dps"
     end
     -- Map Class
     if GCID.VALID_CLASS[class] then
@@ -344,6 +395,7 @@ local function CreateEventsFromData()
       -- Start parting as raid input after title row
       isTitleRow = false;
       parsingRaid = true;
+      GroupCalendarImportData_Message("New event found");
       Event = {}
     end
   end
@@ -396,7 +448,7 @@ local function GuildCachePlayersAllowedToRaid()
         cachedCount = cachedCount + 1
       end
     end
-    GroupCalendarImportData_Message("Found "..cachedCount.." players with min "..MIN_RAID_LEVEL.." lvl");
+    GroupCalendarImportData_Warning("Found "..cachedCount.." players with min "..MIN_RAID_LEVEL.." lvl");
     GuildRaiderCache.CREATED = true
   end
 end
@@ -678,9 +730,9 @@ local function CreateAttendanceListForGroupCalendar(eventData)
     end
     
     if not allowedToRaid then
-      GroupCalendarImportData_Message("Raid <"..eventData[GCID.EVENT_INFO_COLUMN.NAME].."> unknown player: ["..playerData.NAME.."]");
+      GroupCalendarImportData_Warning("Unknown player: ["..playerData.NAME.."]");
     elseif class ~= playerData.CLASS then
-      GroupCalendarImportData_Message("Player ["..playerData.NAME.."] has class mixed up: ["..class.." or "..playerData.CLASS.."]?");
+      GroupCalendarImportData_Warning("Player ["..playerData.NAME.."] has class mixed up: ["..class.." or "..playerData.CLASS.."]?");
     else
       playerInfo.name = playerData.NAME
       playerInfo.classCode = GCID.CLASS[class]
@@ -708,10 +760,10 @@ local function CreateAndFillEvents()
   -- Date
   -- TODO handle date properly, maybe multiple formats
   for _, eventData in pairs(Events) do
-    local day, month, year = strsplit("-", eventData[GCID.EVENT_INFO_COLUMN.DATE])
-    local	vMonthStartDate = Calendar_ConvertMDYToDate(month, 1, year);
+    GroupCalendarImportData_Message("Creating event: "..eventData[GCID.EVENT_INFO_COLUMN.NAME]);
     -- Select date for the event date
-    GroupCalendar_SelectDate(vMonthStartDate + day - 1);
+    local day, month, year = GetDMYFromDateString(eventData[GCID.EVENT_INFO_COLUMN.DATE])
+    GroupCalendar_SelectDate(Calendar_ConvertMDYToDate(month, 1, year) + day - 1);
     -- Create event. This opens event editing window. Due to WoW API requirements its ok.
     CalendarEditor_NewEvent()
     -- Save and update event
@@ -726,6 +778,7 @@ local function CreateAndFillEvents()
     -- So user should not notice it. But if he does - known issue :)
     HideUIPanel(CalendarEventEditorFrame);
   end
+  return true
 end
 
 ----------------------------------------------------------
@@ -774,7 +827,7 @@ function GroupCalendarImportData_Success(message)
 end
 
 ----------------------------------------------------------
--- GroupCalendarImportData_Success
+-- GroupCalendarImportData_Error
 -- Send SUCCESS message
 -- PUBLIC
 ----------------------------------------------------------
@@ -785,13 +838,24 @@ function GroupCalendarImportData_Error(message)
 end
 
 ----------------------------------------------------------
--- GroupCalendarImportData_Success
+-- GroupCalendarImportData_Warning
+-- Send SUCCESS message
+-- PUBLIC
+----------------------------------------------------------
+function GroupCalendarImportData_Warning(message)
+  if message then
+    DEFAULT_CHAT_FRAME:AddMessage(message, 0.9, 0.9, 0.15);
+  end
+end
+
+----------------------------------------------------------
+-- GroupCalendarImportData_Message
 -- Send SUCCESS message
 -- PUBLIC
 ----------------------------------------------------------
 function GroupCalendarImportData_Message(message)
   if message then
-    DEFAULT_CHAT_FRAME:AddMessage(message, 0.9, 0.9, 0.15);
+    DEFAULT_CHAT_FRAME:AddMessage(message, 0.15, 0.15, 0.9);
   end
 end
 
