@@ -772,6 +772,7 @@ local function CreateAttendanceListForGroupCalendar(eventData)
   GuildCachePlayersAllowedToRaid()
 
   local playerList = {}
+  if not eventData[PLAYERS] then return playerList end
   for playerId, playerData in pairs(eventData[PLAYERS]) do
 
     local playerInfo = {
