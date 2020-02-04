@@ -1,8 +1,8 @@
 # This file is part of Group Calendar Import Data WoW Classic AddOn.
 
 # Group Calendar Import Data WoW Classic AddOn is free software: 
-# you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
+# you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 
@@ -19,7 +19,7 @@
 ## Title: Group Calendar |cff00ff00Import Data|r
 ## Version: 1.0.0
 ## Author: Danteril-MirageRaceway
-## Notes: Import Excel, Google Calc or CSV data to group calendar
+## Notes: Import Excel, Google Calc, CSV or TSV data into Group Calendar
 ## RequiredDeps: GroupCalendar
 ## DefaultState: enabled
 
