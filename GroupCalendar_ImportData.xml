@@ -1,3 +1,22 @@
+<!--
+ This file is part of Group Calendar Import Data WoW Classic AddOn.
+
+ Group Calendar Import Data WoW Classic AddOn is free software: 
+ you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ Group Calendar Import Data WoW Classic AddOn is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Group Calendar Import Data WoW Classic AddOn.
+ If not, see <https://www.gnu.org/licenses/>.
+-->
+
 <UI xmlns="http://www.blizzard.com/wow/ui/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.blizzard.com/wow/ui/ http://wowprogramming.com/FrameXML/UI.xsd">
@@ -75,7 +94,7 @@
       </OnLoad>
 		</Scripts>
 	</Frame>
-<!--  <Button name="GroupCalendarImportDataFrame_ButtonImportToggle" inherits="UIPanelButtonTemplate" text="Import">
+<!  <Button name="GroupCalendarImportDataFrame_ButtonImportToggle" inherits="UIPanelButtonTemplate" text="Import">
     <Size>
       <AbsDimension x="95" y="21"/>
     </Size>
@@ -91,5 +110,5 @@
         GroupCalendarImportData_ToggleFrame();
       </OnClick>
     </Scripts>
-  </Button> -->
+  </Button> >
 </UI>
