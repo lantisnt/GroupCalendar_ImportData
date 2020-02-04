@@ -23,7 +23,7 @@
 	
   <Script file="GroupCalendar_ImportData.lua"/>
 
-	<Frame name="GroupCalendarImportDataFrame" toplevel="true" movable="true" resizable="false" clampedToScreen="true" parent="UIParent" enableMouse="true" hidden="true" inherits="UIPanelDialogTemplate">
+	<Frame name="GroupCalendarImportDataFrame" toplevel="true" movable="true" resizable="false" parent="UIParent" enableMouse="true" hidden="true" inherits="UIPanelDialogTemplate">
 		<Size>
 			<AbsDimension x="800" y="440"/>
 		</Size>
@@ -91,7 +91,14 @@
 		<Scripts>
 			<OnLoad>
         GroupCalendarImportData_OnLoad();
+        self:RegisterForDrag("LeftButton");
       </OnLoad>
+      <OnDragStart>
+        self:StartMoving();
+      </OnDragStart>
+      <OnDragStop>
+        self:StopMovingOrSizing();
+      </OnDragStop>
 		</Scripts>
 	</Frame>
 <!--  <Button name="GroupCalendarImportDataFrame_ButtonImportToggle" inherits="UIPanelButtonTemplate" text="Import">

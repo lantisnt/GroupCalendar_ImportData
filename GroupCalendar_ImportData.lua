@@ -20,7 +20,6 @@ local ImportedData = {input = nil, rows = nil}
 local ColumnToEventDataMapping = {}
 local ColumnToClassMapping = {}
 local ColumnToSpecMapping = {}
-local SpecToColumnMapping = { DPS = {}, HEALER = {}, TANK = {} }
 
 local Event = {} 
 local Events = {}
@@ -269,6 +268,48 @@ local function IsEmptyColumn(column)
 end
 
 ----------------------------------------------------------
+-- IsTitleRowMappingValid
+-- Check if title row mapping is valid
+-- PRIVATE
+----------------------------------------------------------
+local function IsTitleRowMappingValid()
+  local hasIndicator = false
+  local hasName = false
+  local hasDate = false
+  local hasTime = false
+  
+  for _, column in pairs(ColumnToEventDataMapping) do
+    if column == GCID.EVENT_INFO_COLUMN.RAID then
+      hasIndicator = true;
+    elseif column == GCID.EVENT_INFO_COLUMN.NAME then
+      hasName = true;
+    elseif column == GCID.EVENT_INFO_COLUMN.DATE then
+      hasDate = true;
+    elseif column == GCID.EVENT_INFO_COLUMN.TIME then
+      hasTime = true;
+    end
+  end
+  
+  if not hasIndicator then
+    GroupCalendarImportData_Error("Missing Raid indiator");
+  end
+  
+  if not hasName then
+    GroupCalendarImportData_Error("Missing raid Name");
+  end
+  
+  if not hasDate then
+    GroupCalendarImportData_Error("Missing raid Date");
+  end
+  
+  if not hasTime then
+    GroupCalendarImportData_Error("Missing raid Time");
+  end
+  
+  return (hasIndicator and hasName and hasDate and hasTime)
+end
+
+----------------------------------------------------------
 -- MapColumnsFromTitleRow
 -- Map column number from 1 to n to its related specifc type
 -- This allows for unordered columns
@@ -294,7 +335,7 @@ local function MapColumnsFromTitleRow(_column, id)
     if GCID.VALID_CLASS[class] then
       ColumnToClassMapping[id] = class
     else
-      ColumnToClassMapping[id] = GCID.CLASS.UNKNOWN.NAME
+      ColumnToClassMapping[id] = GCID.CLASS.UNKNOWN
     end
     -- Map Spec
     if GCID.SPEC.NAME_MAP.DPS[spec] then
@@ -387,7 +428,7 @@ local function CreateEventsFromData()
         if foundColumnWithDataInRow and not isTitleRow then
           -- Erroneus condition
           -- Requirement: first filled column must be the one with title row indication. 
-          GroupCalendarImportData_Error("First filled column must be [Raid] indicator")
+          GroupCalendarImportData_Error("First filled column must be Raid indicator")
           return false
         end
         
@@ -405,14 +446,19 @@ local function CreateEventsFromData()
         -- finalize parsing and create event
         parsingRaid = false;
         table.insert(Events, Event)
+        ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
+        GroupCalendarImportData_Message("Event parsed successfully.")
       end
     end
     
     if isTitleRow then
+      GroupCalendarImportData_Message("Event found");
+      if not IsTitleRowMappingValid() then
+        return false
+      end
       -- Start parting as raid input after title row
-      isTitleRow = false;
+      isTitleRow = false; 
       parsingRaid = true;
-      GroupCalendarImportData_Message("New event found");
       Event = {}
     end
   end
@@ -421,6 +467,8 @@ local function CreateEventsFromData()
   if parsingRaid then
     parsingRaid = false;
     table.insert(Events, Event)
+    ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
+    GroupCalendarImportData_Message("Event parsed successfully")
   end
 
   return true
@@ -900,7 +948,6 @@ function GroupCalendarImportData_ButtonClearOnClick()
   InternalState.imported = false
   Events = {}; Event = {} ImportedData.input = nil; ImportedData.rows = nil;
   ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
-  SpecToColumnMapping.DPS = {}; SpecToColumnMapping.HEALER = {}; SpecToColumnMapping.TANK = {}
   -- Do NOT clear Raider cache
   GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:SetText("");
   collectgarbage()
