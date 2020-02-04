@@ -26,7 +26,7 @@ local Events = {}
 
 local GuildRaiderCache = { CREATED = false, DATA = {}}
 
-local MIN_RAID_LEVEL = 58;
+local MIN_RAID_LEVEL = 1;
 
 ------------------------ SECTION -------------------------
 -- Addon General Functions and UI functions
@@ -335,7 +335,7 @@ local function MapColumnsFromTitleRow(_column, id)
     if GCID.VALID_CLASS[class] then
       ColumnToClassMapping[id] = class
     else
-      ColumnToClassMapping[id] = GCID.CLASS.UNKNOWN
+      ColumnToClassMapping[id] = "unknown"
     end
     -- Map Spec
     if GCID.SPEC.NAME_MAP.DPS[spec] then
