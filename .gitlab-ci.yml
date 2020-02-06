@@ -7,20 +7,17 @@ stages:
 .centos7_luac:
     image: centos:7
     before_script:
+        - export BASE_DIR=$PWD
         - yum install -q -y epel-release
         - yum install -q -y readline-devel gcc make
         - curl https://www.lua.org/ftp/lua-$LUA_VERSION.tar.gz > $LUA_PATH/lua-$LUA_VERSION.tar.gz
         - cd $LUA_PATH
-        - tar -xzvf lua-$LUA_VERSION.tar.gz
+        - tar -xzf lua-$LUA_VERSION.tar.gz
         - cd lua-$LUA_VERSION
         - make linux
         - make test
         - make install INSTALL_TOP=$LUA_PATH
-        - cd $LUA_PATH
-        - ls -lR
-            
-        
-        
+        - cd $BASE_DIR
 
 .check-syntax:
     extends: .centos7_luac
