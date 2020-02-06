@@ -22,6 +22,8 @@
 ## Notes: Import Excel, Google Calc, CSV or TSV data into Group Calendar
 ## RequiredDeps: GroupCalendar
 ## DefaultState: enabled
+## SavedVariables: GCID_Settings
+# SavedVariablesPerCharacter: 
 
 GroupCalendar_ImportData.xml
 GroupCalendar_ImportData.lua

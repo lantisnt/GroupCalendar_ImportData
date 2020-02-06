@@ -61,6 +61,14 @@ GCID = { -- TODO get class and spec codes from main addon automatically
     BLACKWING_LAIR = { ID = "BWL", NAME_MAP = Set {"bwl", "blackwing lair", "blackwinglair" } },
     ONYXIA = { ID = "Onyxia", NAME_MAP = Set {"ony", "onyxia", "onyxias lair", "onyxiaslair" } },
     DEFAULT = "Act"
+  },
+  SETTINGS = 
+  {
+    FORMAT =
+    {
+      DATE = { DMY = 1, MDY = 2, YMD = 3 },
+      TIME = { TIME_12H = 12, TIME_24H = 24 } 
+    }
   }
 }
 

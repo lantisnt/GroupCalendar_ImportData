@@ -15,18 +15,42 @@
 -- along with Group Calendar Import Data WoW Classic AddOn.
 -- If not, see <https://www.gnu.org/licenses/>.
 
-local InternalState = { imported = false }
-local ImportedData = {input = nil, rows = nil}
-local ColumnToEventDataMapping = {}
-local ColumnToClassMapping = {}
-local ColumnToSpecMapping = {}
+------------------------ SECTION -------------------------
+-- Saved variables
+----------------------------------------------------------
 
-local Event = {} 
-local Events = {}
+-- Settings
+if (not GCID_Settings) or (GCID_Settings == nil) then
+  GCID_Settings = { 
+    level = {
+        min = 58,
+        max = 60
+      },
+      format = {
+        date = 1,
+        time = 24
+      },
+      characterRestriction = {
+        level = true,
+        rank = false,
+        blacklist = false
+      }
+  }
+end
 
-local GuildRaiderCache = { CREATED = false, DATA = {}}
-
-local MIN_RAID_LEVEL = 1;
+------------------------ SECTION -------------------------
+-- Local variables
+----------------------------------------------------------
+-- Events parsed by GCID AddOn
+local GCID_Events = {}
+-- Mapping of column id to information
+local GCID_Mappings = { eventData = {}, class = {}, role = {} }
+-- Data input
+local GCID_DataInput = nil
+-- Data import status
+local GCID_DataImported = false
+-- Guild raider Cache
+local GCID_GuildRaiderCache = { created = false, data = {} }
 
 ------------------------ SECTION -------------------------
 -- Addon General Functions and UI functions
@@ -201,13 +225,13 @@ end
 ----------------------------------------------------------
 local function ReformatData()
   -- Copying to WoW puts 4 spaces instead of tab. Reformat all 4 spaced to ,
-  local csv = gsub(ImportedData.input, "    ", ",")
+  local csv = gsub(GCID_DataInput, "    ", ",")
   -- Reformat all tabs to ,
   csv = gsub(csv, "\t", ",")
   -- Remove multiple newlines
   csv = gsub(csv, "\n+", "\n")
   -- Split to rows
-  ImportedData.rows = { strsplit("\n", csv) }
+  GCID_DataInput = { strsplit("\n", csv) }
 end
 
 ----------------------------------------------------------
@@ -278,7 +302,7 @@ local function IsTitleRowMappingValid()
   local hasDate = false
   local hasTime = false
   
-  for _, column in pairs(ColumnToEventDataMapping) do
+  for _, column in pairs(GCID_Mappings.eventData) do
     if column == GCID.EVENT_INFO_COLUMN.RAID then
       hasIndicator = true;
     elseif column == GCID.EVENT_INFO_COLUMN.NAME then
@@ -320,11 +344,11 @@ local function MapColumnsFromTitleRow(_column, id)
   if IsEmptyColumn(_column) then return end
   -- This function is called after Raid indicator is found. No need to check for it.
   if IsNameColumn(_column) then
-    ColumnToEventDataMapping[id] = GCID.EVENT_INFO_COLUMN.NAME
+    GCID_Mappings.eventData[id] = GCID.EVENT_INFO_COLUMN.NAME
   elseif IsDateColumn(_column) then
-    ColumnToEventDataMapping[id] = GCID.EVENT_INFO_COLUMN.DATE
+    GCID_Mappings.eventData[id] = GCID.EVENT_INFO_COLUMN.DATE
   elseif IsTimeColumn(_column) then
-    ColumnToEventDataMapping[id] = GCID.EVENT_INFO_COLUMN.TIME
+    GCID_Mappings.eventData[id] = GCID.EVENT_INFO_COLUMN.TIME
   else
     -- Expected column format is "Class Spec" where spec can be empty and by default set to DPS
     local class, spec = strsplit(" ", strlower(strtrim(_column)))
@@ -333,19 +357,19 @@ local function MapColumnsFromTitleRow(_column, id)
     end
     -- Map Class
     if GCID.VALID_CLASS[class] then
-      ColumnToClassMapping[id] = class
+      GCID_Mappings.class[id] = class
     else
-      ColumnToClassMapping[id] = "unknown"
+      GCID_Mappings.class[id] = "unknown"
     end
     -- Map Spec
     if GCID.SPEC.NAME_MAP.DPS[spec] then
-      ColumnToSpecMapping[id] = "DPS"
+      GCID_Mappings.role[id] = "DPS"
     elseif GCID.SPEC.NAME_MAP.HEALER[spec] then
-      ColumnToSpecMapping[id] = "Healer"
+      GCID_Mappings.role[id] = "Healer"
     elseif GCID.SPEC.NAME_MAP.TANK[spec] then
-      ColumnToSpecMapping[id] = "Tank"
+      GCID_Mappings.role[id] = "Tank"
     else
-      ColumnToSpecMapping[id] = "Unknown"
+      GCID_Mappings.role[id] = "Unknown"
     end
   end
 end
@@ -376,22 +400,22 @@ end
 -- This function is called on each column of each row
 -- PRIVATE
 ----------------------------------------------------------
-local function FillEventData(_column, id)
+local function FillEventData(_column, id, event)
   if IsEmptyColumn(_column) then return end
   
   -- Cleanup value. Trim spaces, remove all invalid characters
   local column = strtrim(_column)
-  if ColumnToEventDataMapping[id] then
+  if GCID_Mappings.eventData[id] then
     -- Event Info
-    Event[ColumnToEventDataMapping[id]] = column
+    event[GCID_Mappings.eventData[id]] = column
   else
     -- PLAYERS
-    if not Event[PLAYERS] then
+    if not event[PLAYERS] then
       Event[PLAYERS] = {}
     end
     
-    local player = { NAME = column, CLASS = ColumnToClassMapping[id], ROLE = ColumnToSpecMapping[id] }
-    table.insert(Event[PLAYERS], player)
+    local player = { NAME = column, CLASS = GCID_Mappings.class[id], ROLE = GCID_Mappings.role[id] }
+    table.insert(event[PLAYERS], player)
   end
 end
 
@@ -406,7 +430,9 @@ end
 local function CreateEventsFromData()
   local parsingRaid = false;
   
-  for _rowId, row in pairs(ImportedData.rows) do
+  local event = {}
+  
+  for _rowId, row in pairs(GCID_DataInput) do
     
     local columns = { strsplit(",", row) }
     
@@ -417,7 +443,7 @@ local function CreateEventsFromData()
       foundColumnWithDataInRow = foundColumnWithDataInRow or (column:len() > 0);
       if parsingRaid then
         -- Parse Raid Info
-        FillEventData(column, _columndId)
+        FillEventData(column, _columndId, event)
       elseif isTitleRow then
         -- Parse title row
         MapColumnsFromTitleRow(column, _columndId)
@@ -433,7 +459,7 @@ local function CreateEventsFromData()
         end
         
         if isTitleRow then
-          ColumnToEventDataMapping[_columndId] = GCID.EVENT_INFO_COLUMN.RAID
+          GCID_Mappings.eventData[_columndId] = GCID.EVENT_INFO_COLUMN.RAID
         end
         
       end
@@ -445,8 +471,8 @@ local function CreateEventsFromData()
       if parsingRaid then
         -- finalize parsing and create event
         parsingRaid = false;
-        table.insert(Events, Event)
-        ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
+        table.insert(GCID_Events, event); event = {}
+        GCID_Mappings.eventData = {}; GCID_Mappings.class = {}; GCID_Mappings.role = {}
         GroupCalendarImportData_Message("Event parsed successfully.")
       end
     end
@@ -459,15 +485,15 @@ local function CreateEventsFromData()
       -- Start parting as raid input after title row
       isTitleRow = false; 
       parsingRaid = true;
-      Event = {}
+      event = {}
     end
   end
   
   -- Handle missing empty row at the end
   if parsingRaid then
     parsingRaid = false;
-    table.insert(Events, Event)
-    ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
+    table.insert(GCID_Events, event); event = {}
+    GCID_Mappings.eventData = {}; GCID_Mappings.class = {}; GCID_Mappings.role = {}
     GroupCalendarImportData_Message("Event parsed successfully")
   end
 
@@ -496,7 +522,7 @@ end
 -- PRIVATE
 ----------------------------------------------------------
 local function GuildCachePlayersAllowedToRaid()
-  if not GuildRaiderCache.CREATED then
+  if not GCID_GuildRaiderCache.created then
     -- Get Guild data
     GuildRoster();
     
@@ -508,13 +534,13 @@ local function GuildCachePlayersAllowedToRaid()
       local fullName, _, rankIndex, level, class = GetGuildRosterInfo(i)
       -- Classic: Remove server from name
       local name = strlower(strsplit("-", fullName))
-      if level >= MIN_RAID_LEVEL then
-        GuildRaiderCache.DATA[name] = { RANKINDEX = rankIndex, LEVEL = level, CLASS = class }
+      if level >= GCID_Settings.level.min then
+        GCID_GuildRaiderCache.data[name] = { RANKINDEX = rankIndex, LEVEL = level, CLASS = class }
         cachedCount = cachedCount + 1
       end
     end
     GroupCalendarImportData_Warning("Found "..cachedCount.." players with min "..MIN_RAID_LEVEL.." lvl");
-    GuildRaiderCache.CREATED = true
+    GCID_GuildRaiderCache.created = true
   end
 end
 
@@ -526,7 +552,7 @@ end
 ----------------------------------------------------------
 local function GetPlayerInfo(playerData)
   -- Check cached raiders data
-  local info = GuildRaiderCache.DATA[strlower(playerData.NAME)]
+  local info = GCID_GuildRaiderCache.data[strlower(playerData.NAME)]
   if not info then
     return false, nil, nil, nil
   else
@@ -825,7 +851,7 @@ end
 local function CreateAndFillEvents()
   -- Date
   -- TODO handle date properly, maybe multiple formats
-  for _, eventData in pairs(Events) do
+  for _, eventData in pairs(GCID_Events) do
     GroupCalendarImportData_Message("Creating event: "..eventData[GCID.EVENT_INFO_COLUMN.NAME]);
     -- Select date for the event date
     local day, month, year = GetDMYFromDateString(eventData[GCID.EVENT_INFO_COLUMN.DATE])
@@ -855,7 +881,7 @@ end
 ----------------------------------------------------------
 local function ImportAndParse()
   -- 1) Get Data
-  ImportedData.input = GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:GetText();
+  GCID_DataInput = GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:GetText();
 
   -- 2) Parse data and get fill events info
   if ParseDataToEvents() then
@@ -866,7 +892,7 @@ local function ImportAndParse()
   end
 
   -- 3) Display parsed data (raw format) -- TODO make it good looking
-  GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:SetText(ArrayToString(Events));
+  GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:SetText(ArrayToString(GCID_Events));
 
   -- 4) Create GroupCalendar events, fill it with info and add attendees
   if CreateAndFillEvents() then
@@ -934,9 +960,9 @@ end
 -- PUBLIC
 ----------------------------------------------------------
 function GroupCalendarImportData_ButtonImportOnClick()
-  if InternalState.imported then return end
+  if GCID_DataImportedimported then return end
   ImportAndParse()
-  InternalState.imported = true
+  GCID_DataImported = true
 end
 
 ----------------------------------------------------------
@@ -946,9 +972,9 @@ end
 ----------------------------------------------------------
 function GroupCalendarImportData_ButtonClearOnClick()
   -- Reset all
-  InternalState.imported = false
-  Events = {}; Event = {} ImportedData.input = nil; ImportedData.rows = nil;
-  ColumnToEventDataMapping = {}; ColumnToClassMapping = {}; ColumnToSpecMapping = {}
+  GCID_DataImported = false
+  GCID_Events = {}; GCID_DataInput = nil;
+  GCID_Mappings.eventData = {}; GCID_Mappings.class = {}; GCID_Mappings.role = {}
   -- Do NOT clear Raider cache
   GroupCalendarImportDataFrame_ScrollFrameImportData.EditBox:SetText("");
   collectgarbage()
