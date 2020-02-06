@@ -9,12 +9,11 @@ stages:
     before_script:
         - yum install -q -y epel-release
         - yum install -q -y readline-devel gcc
-        - >
-            curl https://www.lua.org/ftp/lua-$LUA_VERSION.tar.gz > /tmp/lua-$LUA_VERSION.tar.gz
-            cd /tmp
-            tar -xzvf lua-$LUA_VERSION.tar.gz
-            cd lua-$LUA_VERSION
-            make linux INSTALL_TOP=$LUA_PATH
+        - curl https://www.lua.org/ftp/lua-$LUA_VERSION.tar.gz > /tmp/lua-$LUA_VERSION.tar.gz
+        - cd /tmp
+        - tar -xzvf lua-$LUA_VERSION.tar.gz
+        - cd lua-$LUA_VERSION
+        - make linux INSTALL_TOP=$LUA_PATH
             
         
         
