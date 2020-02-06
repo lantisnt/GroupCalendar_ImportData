@@ -414,7 +414,7 @@ local function FillEventData(_column, id, event)
       Event[PLAYERS] = {}
     end
     
-    local player = { NAME = column, CLASS = GCID_Mappings.class[id], ROLE = GCID_Mappings.role[id] }
+    local player = { name = column, class = GCID_Mappings.class[id], ROLE = GCID_Mappings.role[id] }
     table.insert(event[PLAYERS], player)
   end
 end
@@ -535,11 +535,11 @@ local function GuildCachePlayersAllowedToRaid()
       -- Classic: Remove server from name
       local name = strlower(strsplit("-", fullName))
       if level >= GCID_Settings.level.min then
-        GCID_GuildRaiderCache.data[name] = { RANKINDEX = rankIndex, LEVEL = level, CLASS = class }
+        GCID_GuildRaiderCache.data[name] = { rankIndex = rankIndex, level = level, class = class }
         cachedCount = cachedCount + 1
       end
     end
-    GroupCalendarImportData_Warning("Found "..cachedCount.." players with min "..MIN_RAID_LEVEL.." lvl");
+    GroupCalendarImportData_Warning("Found "..cachedCount.." players with min "..GCID_Settings.level.min.." lvl");
     GCID_GuildRaiderCache.created = true
   end
 end
@@ -552,11 +552,11 @@ end
 ----------------------------------------------------------
 local function GetPlayerInfo(playerData)
   -- Check cached raiders data
-  local info = GCID_GuildRaiderCache.data[strlower(playerData.NAME)]
+  local info = GCID_GuildRaiderCache.data[strlower(playerData.name)]
   if not info then
     return false, nil, nil, nil
   else
-    return true, info.CLASS, info.LEVEL, info.RANKINDEX
+    return true, info.class, info.level, info.rankIndex
   end
   
   -- TODO: Blacklist
@@ -778,7 +778,7 @@ local function PrepareEventDataForGroupCalendar(groupCalendarEvent, eventData)
   changedFields.mDescription = "UPD";
 	
 	-- MinLevel
-  groupCalendarEvent.mMinLevel = MIN_RAID_LEVEL;
+  groupCalendarEvent.mMinLevel = GCID_Settings.level.min;
   changedFields.mMinLevel = "UPD";
 	
   -- MaxLevel
@@ -822,11 +822,11 @@ local function CreateAttendanceListForGroupCalendar(eventData)
     end
     
     if not allowedToRaid then
-      GroupCalendarImportData_Warning("Unknown player: ["..playerData.NAME.."]");
-    elseif class ~= playerData.CLASS then
-      GroupCalendarImportData_Warning("Player ["..playerData.NAME.."] has class mixed up: ["..class.." or "..playerData.CLASS.."]?");
+      GroupCalendarImportData_Warning("Unknown player: ["..playerData.name.."]");
+    elseif class ~= playerData.class then
+      GroupCalendarImportData_Warning("Player ["..playerData.name.."] has class mixed up: ["..class.." or "..playerData.class.."]?");
     else
-      playerInfo.name = playerData.NAME
+      playerInfo.name = playerData.name
       playerInfo.classCode = GCID.CLASS[class]
       playerInfo.level = level
       playerInfo.guildRank = rankIndex
