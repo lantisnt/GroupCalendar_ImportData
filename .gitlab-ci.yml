@@ -52,7 +52,6 @@ lua:
     
     script:
         - $LUA_PATH/bin/luac -o GroupCalendar.luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua
-        - $LUA_PATH/bin/lua GroupCalendar.luac
 
 xml:
     extends: .centos7_xmllint

@@ -458,7 +458,7 @@ local function CreateEventsFromData()
           return false
         end
         
-        if isTitleRow thenx
+        if isTitleRow then
           GCID_Mappings.eventData[_columndId] = GCID.EVENT_INFO_COLUMN.RAID
         end
         
