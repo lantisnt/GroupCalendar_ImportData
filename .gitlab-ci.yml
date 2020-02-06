@@ -8,7 +8,7 @@ stages:
         - yum install -q -y lua
 
 .check-syntax:
-    extends: centos7_luac
+    extends: .centos7_luac
     stage: syntax
     
     script:
