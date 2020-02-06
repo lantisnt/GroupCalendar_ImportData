@@ -51,8 +51,7 @@ lua:
     stage: syntax
     
     script:
-        - $LUA_PATH/bin/luac -o GroupCalendar.luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua
-        - cat GroupCalendar.luac
+        - $LUA_PATH/bin/luac -p GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua
 
 xml:
     extends: .centos7_xmllint
