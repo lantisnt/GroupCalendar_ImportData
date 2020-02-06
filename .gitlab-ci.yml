@@ -1,3 +1,6 @@
+variables:
+    LUA_VERSION: "5.1.4"
+    LUA_PATH: "/tmp"
 stages:
     - syntax
 
@@ -5,14 +8,23 @@ stages:
     image: centos:7
     before_script:
         - yum install -q -y epel-release
-        - yum install -q -y lua
+        - yum install -q -y readline-devel gcc
+        - >
+            curl https://www.lua.org/ftp/lua-$LUA_VERSION.tar.gz > /tmp/lua-$LUA_VERSION.tar.gz
+            cd /tmp
+            tar -xzvf lua-$LUA_VERSION.tar.gz
+            cd lua-$LUA_VERSION
+            make linux INSTALL_TOP=$LUA_PATH
+            
+        
+        
 
 .check-syntax:
     extends: .centos7_luac
     stage: syntax
     
     script:
-        - luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua -o GroupCalendar.luac
+        - $LUA_PATH/bin/luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua -o GroupCalendar.luac
         
         
 check-syntax:
