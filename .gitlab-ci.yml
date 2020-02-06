@@ -19,18 +19,28 @@ stages:
     make install INSTALL_TOP=$LUA_PATH
     cd $BASE_DIR
 
-.centos7_luac:
+.centos7:
     image: centos:7
+
+.centos7_luac:
+    extends: .centos7
     before_script:
         - *install_lua
+ 
+.centos7_xmllint:
+    extends: .centos7
 
-.check-syntax:
+lua:
     extends: .centos7_luac
     stage: syntax
     
     script:
         - $LUA_PATH/bin/luac -o GroupCalendar.luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua
         - cat GroupCalendar.luac
-        
-check-syntax:
-    extends: .check-syntax
+
+xml:
+    extends: .centos7_xmllint
+    stage: syntax
+    
+    script:
+        - xmllint --dropdtd GroupCalendar_ImportData.xml
