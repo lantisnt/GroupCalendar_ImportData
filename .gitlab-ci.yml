@@ -5,8 +5,8 @@ variables:
 stages:
     - syntax
 
-.install_lua: &install_lua
-    -|
+.install_lua: &install_lua 
+    - >
     export BASE_DIR=$PWD
     yum install -q -y epel-release
     yum install -q -y readline-devel gcc make
