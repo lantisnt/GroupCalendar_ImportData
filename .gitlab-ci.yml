@@ -29,10 +29,8 @@ stages:
     stage: syntax
     
     script:
-        - touch GroupCalendar.luac && chmod +xwr GroupCalendar.luac
-        - $LUA_PATH/bin/luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua -o GroupCalendar.luac
+        - $LUA_PATH/bin/luac -o GroupCalendar.luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua
         - cat GroupCalendar.luac
-        
         
 check-syntax:
     extends: .check-syntax
