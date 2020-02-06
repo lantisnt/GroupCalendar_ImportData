@@ -13,7 +13,9 @@ stages:
         - cd $LUA_PATH
         - tar -xzvf lua-$LUA_VERSION.tar.gz
         - cd lua-$LUA_VERSION
-        - make linux INSTALL_TOP=$LUA_PATH
+        - make linux
+        - make test
+        - make install INSTALL_TOP=$LUA_PATH
         - cd $LUA_PATH
         - ls -lR
             
