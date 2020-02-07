@@ -15,6 +15,8 @@
 -- along with Group Calendar Import Data WoW Classic AddOn.
 -- If not, see <https://www.gnu.org/licenses/>.
 
+local _, L = ...;
+
 ------------------------ SECTION -------------------------
 -- Saved variables
 ----------------------------------------------------------
@@ -315,19 +317,19 @@ local function IsTitleRowMappingValid()
   end
   
   if not hasIndicator then
-    GroupCalendarImportData_Error("Missing Raid indiator");
+    GroupCalendarImportData_Error(L["Missing Raid indicator"]);
   end
   
   if not hasName then
-    GroupCalendarImportData_Error("Missing raid Name");
+    GroupCalendarImportData_Error(L["Missing raid Name"]);
   end
   
   if not hasDate then
-    GroupCalendarImportData_Error("Missing raid Date");
+    GroupCalendarImportData_Error(L["Missing raid Date"]);
   end
   
   if not hasTime then
-    GroupCalendarImportData_Error("Missing raid Time");
+    GroupCalendarImportData_Error(L["Missing raid Time"]);
   end
   
   return (hasIndicator and hasName and hasDate and hasTime)
@@ -401,14 +403,15 @@ end
 -- PRIVATE
 ----------------------------------------------------------
 local function FillEventData(_column, id, event)
-  if IsEmptyColumn(_column) then return end
-  
+  if not _column then _column = "" end
   -- Cleanup value. Trim spaces, remove all invalid characters
   local column = strtrim(_column)
   if GCID_Mappings.eventData[id] then
     -- Event Info
     event[GCID_Mappings.eventData[id]] = column
   else
+    if IsEmptyColumn(_column) then return end
+    
     -- PLAYERS
     if not event[PLAYERS] then
       Event[PLAYERS] = {}
@@ -454,7 +457,7 @@ local function CreateEventsFromData()
         if foundColumnWithDataInRow and not isTitleRow then
           -- Erroneus condition
           -- Requirement: first filled column must be the one with title row indication. 
-          GroupCalendarImportData_Error("First filled column must be Raid indicator")
+          GroupCalendarImportData_Error(L["First filled column must be Raid indicator"])
           return false
         end
         
@@ -473,12 +476,12 @@ local function CreateEventsFromData()
         parsingRaid = false;
         table.insert(GCID_Events, event); event = {}
         GCID_Mappings.eventData = {}; GCID_Mappings.class = {}; GCID_Mappings.role = {}
-        GroupCalendarImportData_Message("Event parsed successfully.")
+        GroupCalendarImportData_Message(L["Event parsed successfully"])
       end
     end
     
     if isTitleRow then
-      GroupCalendarImportData_Message("Event found");
+      GroupCalendarImportData_Message(L["Event found"]);
       if not IsTitleRowMappingValid() then
         return false
       end
@@ -494,7 +497,7 @@ local function CreateEventsFromData()
     parsingRaid = false;
     table.insert(GCID_Events, event); event = {}
     GCID_Mappings.eventData = {}; GCID_Mappings.class = {}; GCID_Mappings.role = {}
-    GroupCalendarImportData_Message("Event parsed successfully")
+    GroupCalendarImportData_Message(L["Event parsed successfully"])
   end
 
   return true
@@ -539,7 +542,7 @@ local function GuildCachePlayersAllowedToRaid()
         cachedCount = cachedCount + 1
       end
     end
-    GroupCalendarImportData_Warning("Found "..cachedCount.." players with min "..GCID_Settings.level.min.." lvl");
+    GroupCalendarImportData_Warning(L["Found"].." "..cachedCount.." "..L["players with min"].." "..GCID_Settings.level.min.." "..L["level"]);
     GCID_GuildRaiderCache.created = true
   end
 end
@@ -774,7 +777,7 @@ local function PrepareEventDataForGroupCalendar(groupCalendarEvent, eventData)
   --	changedFields.mDuration = "UPD";
 	
 	-- Description
-  groupCalendarEvent.mDescription = Calendar_EscapeString("Event imported using GroupCalendar ImportData");
+  groupCalendarEvent.mDescription = Calendar_EscapeString(L["Event imported using GroupCalendar ImportData"]);
   changedFields.mDescription = "UPD";
 	
 	-- MinLevel
@@ -822,9 +825,9 @@ local function CreateAttendanceListForGroupCalendar(eventData)
     end
     
     if not allowedToRaid then
-      GroupCalendarImportData_Warning("Unknown player: ["..playerData.name.."]");
+      GroupCalendarImportData_Warning(L["Unknown player"]..": ["..playerData.name.."]");
     elseif class ~= playerData.class then
-      GroupCalendarImportData_Warning("Player ["..playerData.name.."] has class mixed up: ["..class.." or "..playerData.class.."]?");
+      GroupCalendarImportData_Warning(L["Player"].." ["..playerData.name.."] "..L["has class mixed up"]..": ["..class.." "..L["or"].." "..playerData.class.."]?");
     else
       playerInfo.name = playerData.name
       playerInfo.classCode = GCID.CLASS[class]
@@ -852,7 +855,7 @@ local function CreateAndFillEvents()
   -- Date
   -- TODO handle date properly, maybe multiple formats
   for _, eventData in pairs(GCID_Events) do
-    GroupCalendarImportData_Message("Creating event: "..eventData[GCID.EVENT_INFO_COLUMN.NAME]);
+    GroupCalendarImportData_Message(L["Creating event"]..": "..eventData[GCID.EVENT_INFO_COLUMN.NAME]);
     -- Select date for the event date
     local day, month, year = GetDMYFromDateString(eventData[GCID.EVENT_INFO_COLUMN.DATE])
     GroupCalendar_SelectDate(Calendar_ConvertMDYToDate(month, 1, year) + day - 1);
@@ -885,9 +888,9 @@ local function ImportAndParse()
 
   -- 2) Parse data and get fill events info
   if ParseDataToEvents() then
-    GroupCalendarImportData_Success("Parse successful");
+    GroupCalendarImportData_Success(L["Parse successful"]);
   else
-    GroupCalendarImportData_Error("Parse failed");
+    GroupCalendarImportData_Error(L["Parse failed"]);
     return
   end
 
@@ -896,9 +899,9 @@ local function ImportAndParse()
 
   -- 4) Create GroupCalendar events, fill it with info and add attendees
   if CreateAndFillEvents() then
-    GroupCalendarImportData_Success("Import complete");
+    GroupCalendarImportData_Success(L["Import complete"]);
   else
-    GroupCalendarImportData_Error("Import error");
+    GroupCalendarImportData_Error(L["Import error"]);
     return
   end
 

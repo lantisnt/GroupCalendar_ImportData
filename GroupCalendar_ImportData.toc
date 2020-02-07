@@ -19,6 +19,7 @@
 ## Title: Group Calendar |cff00ff00Import Data|r
 ## Version: 1.0.0
 ## Author: Danteril-MirageRaceway
+## Description: Import Excel, Google Calc, CSV or TSV data into Group Calendar
 ## Notes: Import Excel, Google Calc, CSV or TSV data into Group Calendar
 ## RequiredDeps: GroupCalendar
 ## DefaultState: enabled
@@ -28,3 +29,12 @@
 GroupCalendar_ImportData.xml
 GroupCalendar_ImportData.lua
 GroupCalendar_ImportDataEnums.lua
+
+Locale\en.lua
+Locale\cn.lua
+Locale\de.lua
+Locale\es.lua
+Locale\fr.lua
+Locale\kr.lua
+Locale\ru.lua
+Locale\tw.lua

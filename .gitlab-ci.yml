@@ -51,11 +51,11 @@ lua:
     stage: syntax
     
     script:
-        - $LUA_PATH/bin/luac -o GroupCalendar.luac GroupCalendar_ImportData.lua GroupCalendar_ImportDataEnums.lua
+        - $LUA_PATH/bin/luac -o GroupCalendar.luac *.lua Localization/*.lua
 
 xml:
     extends: .centos7_xmllint
     stage: syntax
     
     script:
-        - xmllint --dropdtd GroupCalendar_ImportData.xml
+        - xmllint --dropdtd *.xml
