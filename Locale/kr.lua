@@ -18,5 +18,5 @@
 local _, L = ...;
 
 if GetLocale() == "koKR" then
-  L = {}
+  --L = {}
 end

@@ -18,5 +18,11 @@
 local _, L = ...;
 
 if GetLocale() == "zhCN" then
-  L = {}
+ --[[ L = {
+      "Missing indicator column: Raid" = "",
+      "Missing column: Name" = "",
+      "Missing column: Date" = "",
+      "Missing column: Time" = ""
+      
+  }]]--
 end

@@ -18,5 +18,5 @@
 local _, L = ...;
 
 if GetLocale() == "ruRU" then
-  L = {}
+  --L = {}
 end

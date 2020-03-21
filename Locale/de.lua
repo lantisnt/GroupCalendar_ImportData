@@ -18,5 +18,5 @@
 local _, L = ...;
 
 if GetLocale() == "deDE" then
-  L = {}
+  --L = {}
 end

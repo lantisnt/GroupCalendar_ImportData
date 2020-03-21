@@ -18,5 +18,5 @@
 local _, L = ...;
 
 if GetLocale() == "zhTW" then
-  L = {}
+  --L = {}
 end

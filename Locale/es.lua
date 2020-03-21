@@ -18,5 +18,5 @@
 local _, L = ...;
 
 if GetLocale() == "esES" or GetLocale() == "esMX" then
-  L = {}
+  --L = {}
 end

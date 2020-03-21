@@ -1,0 +1,257 @@
+<!--
+ This file is part of  Group Calendar Import Data WoW Classic AddOn.
+
+  Group Calendar Import Data WoW Classic AddOn is free software: 
+ you can redistribute it and/or modify it
+ under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+  Group Calendar Import Data WoW Classic AddOn is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with Safe Pull Classic WoW AddOn.
+ If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<UI xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ http://wowprogramming.com/FrameXML/UI.xsd">
+	
+  <Script file="GroupCalendar_ImportDataOptions.lua"/>
+
+  <!-- Templates -->
+  
+  <!-- Header -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_HeaderTemplate" virtual="true">
+    <Size>
+      <AbsDimension x="300" y="30" />
+    </Size>
+    <Anchors>
+      <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" x="10" y="-5" />
+    </Anchors>
+    <Layers>
+      <Layer>
+        <FontString name="$parent_String" text="" inherits="GameFontNormalLarge">
+          <Color r="1" g="0.8" b="0" a="1"/>
+          <FontHeight val="18"/>
+          <Anchors>
+            <Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT" x="10" y="-5" /> <!-- workaround -->
+          </Anchors>
+          <Shadow>
+            <Offset x="2" y="2" />
+            <Color r="0.2" g="0.2" b="0.2"/>
+          </Shadow>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Frame>
+  
+  <!-- Body -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_BodyTemplate" virtual="true">
+    <Size>
+      <AbsDimension x="300" y="140" />
+    </Size>
+  </Frame>
+  
+  <!-- Text -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_TextTemplate" virtual="true">
+    <Size>
+      <AbsDimension x="140" y="30" />
+    </Size>
+    <Anchors>
+      <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" x="10" y="-5" />
+    </Anchors>
+    <Layers>
+      <Layer>
+        <FontString name="$parent_String" text="" inherits="GameFontNormal">
+          <Color r="0.9" g="0.9" b="0.9" a="1"/>
+          <FontHeight val="12"/>
+          <Anchors>
+            <Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT"/>
+          </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+  </Frame>
+  
+  <!-- Generic DataInput (of any type) Field -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_GenericDataInputFieldTemplate" virtual="true">
+    <Size>
+      <AbsDimension x="300" y="30" />
+    </Size>
+    <Anchors>
+      <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT"/>
+    </Anchors>
+  </Frame>
+  
+  <!-- Dropdown template -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_DropDownMenuTemplate" inherits="UIDropDownMenuTemplate" virtual="true">
+    <Size>
+      <AbsDimension x="140" y="30" />
+    </Size>
+  </Frame>
+  
+  <!-- Numeric InputBox template -->
+  <EditBox name="GroupCalendar_ImportDataOptionsFrame_EditBoxNumericTemplate" inherits="InputBoxTemplate" numeric="true" letters="3" autoFocus="false" virtual="true">
+    <Size>
+      <AbsDimension x="60" y="30" />
+    </Size>
+  </EditBox>    
+  
+  <!-- Dropdown with title -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_DropDownTemplate" inherits="GroupCalendar_ImportDataOptionsFrame_GenericDataInputFieldTemplate" virtual="true">
+    <Frames>
+      <Frame name="$parent_Title" inherits="GroupCalendar_ImportDataOptionsFrame_TextTemplate" />
+      <Frame name="$parent_Value" inherits="GroupCalendar_ImportDataOptionsFrame_DropDownMenuTemplate">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_Title" relativePoint="RIGHT" x="-10" y="0" />
+        </Anchors>
+      </Frame>
+    </Frames>
+  </Frame>
+  
+  <!-- Input with title -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_InputTemplate" inherits="GroupCalendar_ImportDataOptionsFrame_GenericDataInputFieldTemplate" virtual="true">
+    <Frames>
+      <Frame name="$parent_Title" inherits="GroupCalendar_ImportDataOptionsFrame_TextTemplate" />
+      <EditBox name="$parent_Value" inherits="GroupCalendar_ImportDataOptionsFrame_EditBoxNumericTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Title" relativePoint="TOPRIGHT" x="5" y="0" />
+        </Anchors>
+      </EditBox>
+    </Frames>
+  </Frame>
+  
+  <!-- Container with One Dropdown -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_ContainerWithDropDownTemplate" inherits="OptionsBoxTemplate" virtual="true">
+    <Frames>
+      <!-- Header -->
+      <Frame name="$parent_Header" inherits="GroupCalendar_ImportDataOptionsFrame_HeaderTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" />
+        </Anchors>
+      </Frame>
+      <!-- Body -->
+      <Frame name="$parent_Body" inherits="GroupCalendar_ImportDataOptionsFrame_BodyTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Header" relativePoint="BOTTOMLEFT" />
+        </Anchors>
+        <Frames>
+          <Frame name="$parent_DropDown" inherits="GroupCalendar_ImportDataOptionsFrame_DropDownTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" />
+            </Anchors>
+          </Frame>
+        </Frames>
+      </Frame>
+    </Frames>
+  </Frame>
+
+  <!-- Container with One Input -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_ContainerWithInputTemplate" inherits="OptionsBoxTemplate" virtual="true">
+    <Frames>
+      <!-- Header -->
+      <Frame name="$parent_Header" inherits="GroupCalendar_ImportDataOptionsFrame_HeaderTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" />
+        </Anchors>
+      </Frame>
+      <!-- Body -->
+      <Frame name="$parent_Body" inherits="GroupCalendar_ImportDataOptionsFrame_BodyTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Header" relativePoint="BOTTOMLEFT" />
+        </Anchors>
+        <Frames>
+          <Frame name="$parent_Input" inherits="GroupCalendar_ImportDataOptionsFrame_InputTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" />
+            </Anchors>
+          </Frame>
+        </Frames>
+      </Frame>
+    </Frames>
+  </Frame>
+  
+  <!-- Container with One Dropdown and One Input -->
+  <Frame name="GroupCalendar_ImportDataOptionsFrame_ContainerWithDropDownAndInputTemplate" inherits="OptionsBoxTemplate" virtual="true">
+    <Frames>
+      <!-- Header -->
+      <Frame name="$parent_Header" inherits="GroupCalendar_ImportDataOptionsFrame_HeaderTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" />
+        </Anchors>
+      </Frame>
+      <!-- Body -->
+      <Frame name="$parent_Body" inherits="GroupCalendar_ImportDataOptionsFrame_BodyTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Header" relativePoint="BOTTOMLEFT" />
+        </Anchors>
+        <Frames>
+          <Frame name="$parent_DropDown" inherits="GroupCalendar_ImportDataOptionsFrame_DropDownTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT" />
+            </Anchors>
+          </Frame>
+          <Frame name="$parent_Input" inherits="GroupCalendar_ImportDataOptionsFrame_InputTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="$parent_DropDown" relativePoint="BOTTOMLEFT" />
+            </Anchors>
+          </Frame>
+        </Frames>
+      </Frame>
+    </Frames>
+  </Frame>
+  
+  <!-- Frames -->
+  
+  <!-- Options panel -->
+	<Frame name="GroupCalendar_ImportDataOptionsFrame">
+    <Frames>
+      <Frame name="$parent_Safety" inherits="GroupCalendar_ImportDataOptionsFrame_ContainerWithDropDownTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT"  x="5" y="-10" />
+        </Anchors>
+        <Size>
+          <AbsDimension x="300" y="140" />
+        </Size>
+      </Frame>
+
+      <Frame name="$parent_Refresh" inherits="GroupCalendar_ImportDataOptionsFrame_ContainerWithInputTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Safety" relativePoint="TOPRIGHT"  x="5" y="0" />
+        </Anchors>
+        <Size>
+          <AbsDimension x="300" y="140" />
+        </Size>
+      </Frame>
+
+      <Frame name="$parent_Health" inherits="GroupCalendar_ImportDataOptionsFrame_ContainerWithDropDownAndInputTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Safety" relativePoint="BOTTOMLEFT"  x="0" y="-10" />
+        </Anchors>
+        <Size>
+          <AbsDimension x="300" y="140" />
+        </Size>
+      </Frame>
+
+      <Frame name="$parent_Mana" inherits="GroupCalendar_ImportDataOptionsFrame_ContainerWithDropDownAndInputTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_Refresh" relativePoint="BOTTOMLEFT"  x="0" y="-10" />
+        </Anchors>
+        <Size>
+          <AbsDimension x="300" y="140" />
+        </Size>
+      </Frame>
+    </Frames>
+
+    <Scripts>
+      <OnLoad>
+        GroupCalendar_ImportDataOptions_OnLoad(self);
+      </OnLoad>
+    </Scripts>
+  </Frame>
+</UI>

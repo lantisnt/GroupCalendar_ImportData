@@ -258,8 +258,7 @@ end
 -- IsDateColumn
 -- Check if column contains event date
 -- PRIVATE
-----------------------------------------------------------
-local function IsDateColumn(column)
+----------------------------------)
   return (strlower(strtrim(column)) == GCID.EVENT_INFO_COLUMN.DATE)
 end
 
@@ -317,19 +316,19 @@ local function IsTitleRowMappingValid()
   end
   
   if not hasIndicator then
-    GroupCalendarImportData_Error(L["Missing Raid indicator"]);
+    GroupCalendarImportData_Error(L["Missing indicator column: Raid"]);
   end
   
   if not hasName then
-    GroupCalendarImportData_Error(L["Missing raid Name"]);
+    GroupCalendarImportData_Error(L["Missing column: Name"]);
   end
   
   if not hasDate then
-    GroupCalendarImportData_Error(L["Missing raid Date"]);
+    GroupCalendarImportData_Error(L["Missing column: Date"]);
   end
   
   if not hasTime then
-    GroupCalendarImportData_Error(L["Missing raid Time"]);
+    GroupCalendarImportData_Error(L["Missing column: Time"]);
   end
   
   return (hasIndicator and hasName and hasDate and hasTime)
@@ -435,6 +434,7 @@ local function CreateEventsFromData()
   
   local event = {}
   
+  -- Iterate over rows
   for _rowId, row in pairs(GCID_DataInput) do
     
     local columns = { strsplit(",", row) }
@@ -442,6 +442,7 @@ local function CreateEventsFromData()
     local foundColumnWithDataInRow = false;
     local isTitleRow = false;
     
+    -- Iterate over columns of row
     for _columndId, column in pairs(columns) do
       foundColumnWithDataInRow = foundColumnWithDataInRow or (column:len() > 0);
       if parsingRaid then

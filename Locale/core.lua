@@ -16,6 +16,6 @@
 -- If not, see <https://www.gnu.org/licenses/>.
 
 local _, L = ...;
-local function d(L, key) return key; end
+local function _d(L, key) return key; end
 
-setmetatable(L, {__index=d});
+setmetatable(L, {__index=_d});

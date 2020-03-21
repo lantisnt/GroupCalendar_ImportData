@@ -15,26 +15,24 @@
 # along with Group Calendar Import Data WoW Classic AddOn.
 # If not, see <https://www.gnu.org/licenses/>.
 
-## Interface: 11304
-## Title: Group Calendar |cff00ff00Import Data|r
-## Version: 1.0.0
-## Author: Danteril-MirageRaceway
-## Description: Import Excel, Google Calc, CSV or TSV data into Group Calendar
-## Notes: Import Excel, Google Calc, CSV or TSV data into Group Calendar
-## RequiredDeps: GroupCalendar
-## DefaultState: enabled
-## SavedVariables: GCID_Settings
-# SavedVariablesPerCharacter: 
+# Ignore everything
+*
 
-Core\GroupCalendar_ImportData.xml
-Core\GroupCalendar_ImportData.lua
-Core\GroupCalendar_ImportDataEnums.lua
+# Don't ignore subdirectories
+*/
 
-Locale\en.lua
-Locale\cn.lua
-Locale\de.lua
-Locale\es.lua
-Locale\fr.lua
-Locale\kr.lua
-Locale\ru.lua
-Locale\tw.lua
+# Don't ignore lua files
+!*.lua
+
+# Don't ignore toc files
+!*.toc
+
+# Don't ignore xml files
+!*.xml
+
+# Don't ignore repository files
+!.gitignore
+!.gitlab-ci.yml
+!COPYING
+!README
+!pkbmeta.yaml
