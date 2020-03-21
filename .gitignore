@@ -30,6 +30,12 @@
 # Don't ignore xml files
 !*.xml
 
+# Don't ignore example files
+!Examples
+!Examples/*.csv
+!Examples/*.csv
+!Examples/*.xlsx
+
 # Don't ignore repository files
 !.gitignore
 !.gitlab-ci.yml

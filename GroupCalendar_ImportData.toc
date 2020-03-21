@@ -26,15 +26,28 @@
 ## SavedVariables: GCID_Settings
 # SavedVariablesPerCharacter: 
 
-Core\GroupCalendar_ImportData.xml
-Core\GroupCalendar_ImportData.lua
-Core\GroupCalendar_ImportDataEnums.lua
+# Language extensions
+src\Lua\Extensions.lua
 
-Locale\en.lua
-Locale\cn.lua
-Locale\de.lua
-Locale\es.lua
-Locale\fr.lua
-Locale\kr.lua
-Locale\ru.lua
-Locale\tw.lua
+# Logging
+src\Log\Log.lua
+
+# Locale
+src\Locale\core.lua
+src\Locale\cn.lua
+src\Locale\de.lua
+src\Locale\es.lua
+src\Locale\fr.lua
+src\Locale\kr.lua
+src\Locale\ru.lua
+src\Locale\tw.lua
+
+# Core
+src\Core\GroupCalendar_ImportData.lua
+src\Core\Enums.lua
+src\Core\UI.lua
+src\Core\UI.xml
+
+# Options
+src\Options\Options.lua
+src\Options\Options.xml
