@@ -122,7 +122,7 @@ end
 -- PRIVATE
 ----------------------------------------------------------
 local function GetDMYFromDateString(string)
-  GroupCalendarImportData_Log(string) 
+  GroupCalendarImportData_Log(string)
   local separator = nil
   if strfind(string, "/") then
     separator = "/"
@@ -797,20 +797,35 @@ local function CreateAndFillEvents()
   -- TODO handle date properly, maybe multiple formats
   for _, eventData in pairs(GCID_Events) do
     GroupCalendarImportData_Message(L["Creating event"]..": "..eventData[GCID.EVENT_INFO_COLUMN.NAME]);
+
     -- Select date for the event date
     local day, month, year = GetDMYFromDateString(eventData[GCID.EVENT_INFO_COLUMN.DATE])
     GroupCalendar_SelectDate(Calendar_ConvertMDYToDate(month, 1, year) + day - 1);
+
     -- Create event. This opens event editing window. Due to WoW API requirements its ok.
     CalendarEditor_NewEvent()
+
     -- Save and update event
     local eventInfo = PrepareEventDataForGroupCalendar(gCalendarEventEditor_Event, eventData)
-    _CalendarEventEditor_SaveEvent(eventInfo)
+
+    if gGroupCalendar_ExternalApiSupport then
+      CalendarEventEditor_SaveEvent(eventInfo)
+    else -- Temporary backwards compatibility
+      _CalendarEventEditor_SaveEvent(eventInfo)
+    end
+
     -- Add Attendees
     local playerList = CreateAttendanceListForGroupCalendar(eventData)
-    for _, playerInfo in pairs(playerList) do
-      _CalendarAddPlayer_Save(playerInfo)
+    if gGroupCalendar_ExternalApiSupport then
+      for _, playerInfo in pairs(playerList) do
+        CalendarAddPlayer_Save(playerInfo)
+      end
+    else -- Temporary backwards compatibility
+      for _, playerInfo in pairs(playerList) do
+        _CalendarAddPlayer_Save(playerInfo)
+      end
     end
-    -- Hide the event editiing window. This should happen fast enough and behind the import UI
+    -- Hide the event editing window. This should happen fast enough and behind the import UI
     -- So user should not notice it. But if he does - known issue :)
     HideUIPanel(CalendarEventEditorFrame);
   end
